@@ -43,14 +43,38 @@ get_server_ip() {
     ip route get 1 | awk '{print $7; exit}'
 }
 
+is_package_installed() {
+    local package=$1
+    dpkg -l | grep -qw $package
+}
+
 update_system() {
     log_message "INFO" "Starting system update and upgrade..."
     sudo apt update && sudo apt upgrade -y
     log_message "SUCCESS" "System updated successfully."
 
-    log_message "INFO" "Installing required dependencies..."
-    sudo apt install -y net-tools ufw wget
-    log_message "SUCCESS" "Dependencies installed successfully."
+    log_message "INFO" "Checking and installing required dependencies..."
+
+    if ! is_package_installed "net-tools"; then
+        sudo apt install -y net-tools
+        log_message "SUCCESS" "net-tools installed successfully."
+    else
+        log_message "INFO" "net-tools is already installed."
+    fi
+
+    if ! is_package_installed "ufw"; then
+        sudo apt install -y ufw
+        log_message "SUCCESS" "ufw installed successfully."
+    else
+        log_message "INFO" "ufw is already installed."
+    fi
+
+    if ! is_package_installed "wget"; then
+        sudo apt install -y wget
+        log_message "SUCCESS" "wget installed successfully."
+    else
+        log_message "INFO" "wget is already installed."
+    fi
 }
 
 configure_firewall() {
@@ -80,19 +104,16 @@ setup_node() {
     log_message "SUCCESS" "Node setup completed."
 
     log_message "INFO" "Saving node key..."
-    sudo bash manager.sh key
+    NODE_KEY=$(sudo bash manager.sh key)
     log_message "SUCCESS" "Key saved and bound successfully."
-}
 
-show_connection_info() {
     local server_ip
     server_ip=$(get_server_ip)
     log_message "INFO" "Your server IP is: $server_ip"
 
-    local key="xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     local link="https://account.network3.ai/main?o=${server_ip}:${FIREWALL_PORT}"
 
-    echo -e "${GREEN}[+] KEY: ${CYAN}${key}${NC}"
+    echo -e "${GREEN}[+] KEY: ${CYAN}${NODE_KEY}${NC}"
     echo -e "${GREEN}[+] LINK CONNECT: ${CYAN}${link}${NC}"
 }
 
@@ -102,7 +123,6 @@ main() {
     configure_firewall $PORT
     install_node
     setup_node
-    show_connection_info
 }
 
 main
