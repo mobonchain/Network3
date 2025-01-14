@@ -104,7 +104,7 @@ setup_node() {
     log_message "SUCCESS" "Node setup completed."
 
     log_message "INFO" "Saving node key..."
-    NODE_KEY=$(sudo bash manager.sh key)
+    NODE_KEY=$(sudo bash manager.sh key | grep -oP '^[A-Za-z0-9+/=]+$')  # Trích xuất key
     log_message "SUCCESS" "Key saved and bound successfully."
 
     local server_ip
